@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link  rel="stylesheet" type="text/css"  href="../css/style.css"/>
+</head>
+<body>
+<div class="home-main">
+    <div class="home-main-alert"><label>提示: 支付成功</label></div>
+    <div class="home-main-fukuanmp">
+        <input class="home-main-fukuanma" type="text" placeholder="付款码">
+    </div>
+    <div class="home-main-price">
+        <div class="home-main-price1p">
+            <input class="home-main-price1 price" type="text" placeholder="应收">
+        </div>
+        <div class="home-main-price2p">
+            <input class="home-main-price2 price" type="text" placeholder="实收">
+        </div>
+    </div>
+    <!--音频-->
+    <audio src="" id="audio_mp3" controls="controls" autoplay="autoplay" style="display:none;">
+        不支持语音
+    </audio>
+    <!--数字-->
+    <div class="home-main-number">
+        <ul>
+            <li class="home-main-number-item" data-number="1">1</li>
+            <li class="home-main-number-item" data-number="2">2</li>
+            <li class="home-main-number-item" data-number="3">3</li>
+            <li class="home-main-number-item" data-number="4">4</li>
+            <li class="home-main-number-item" data-number="5">5</li>
+            <li class="home-main-number-item" data-number="6">6</li>
+            <li class="home-main-number-item" data-number="7">7</li>
+            <li class="home-main-number-item" data-number="8">8</li>
+            <li class="home-main-number-item" data-number="9">9</li>
+            <li class="home-main-number-item" data-number="0">0</li>
+            <li class="home-main-number-item" data-number="00">00</li>
+            <li class="home-main-number-item" data-number=".">.</li>
+        </ul>
+    </div>
+    <!--操作-->
+    <div class="home-main-settings">
+        <div class="home-main-esc" id="esc-btn">ESC</div>
+        <div class="home-main-del" id="del-btn">DEL</div>
+    </div>
+</div>
+<script src="../js/jquery-1.9.1.js"></script>
+<script>
+    var userinfo = JSON.parse(localStorage.getItem('userinfo'));
+    $(function(){
+        //通过函数表达式定义函数
+        var windowEvent = function() {
+            //数字点击事件
+            $('.home-main-number-item').click(function(){
+                var str = $(this).attr("data-number");
+                var obj = $(".price");
+                var price_obj =  obj.eq(0);
+                var price =price_obj.val();
+                var new_price = price;
+                if(str == '.'){
+                    if(price.length>0 && price.indexOf('.')==-1){
+                        new_price =price.toString()+str.toString();
+                    }
+                }else{
+                    if(price.indexOf('.')==-1 || price.split('.')[1].length <2){
+                        new_price = price.toString()+str.toString();
+                    }
+                }
+                price_obj.val(new_price);
+                obj.eq(1).val(new_price);
+            });
+            //ESC操作
+            $("#esc-btn").click(function(){
+                $(".price").val("");
+            });
+            //DEL操作
+            $("#del-btn").click(function(){
+                var obj_price =  $(".price");
+                var new_price = obj_price.eq(0).val().toString();
+                new_price = new_price.substr(0,new_price.length-1)
+                obj_price.val(new_price);
+            });
+            //实付款输入框
+            $('.home-main-price1').on("input propertychanget",function(){
+                var obj_price =  $(".price");
+                obj_price.eq(1).val(obj_price.eq(0).val().toString())
+            })
+        };
+        windowEvent();
+    });
+    //语音事件
+    function showmp3(txt){
+        var mp3_url = "https://tsn.baidu.com/text2audio?tex="+encodeURIComponent(txt)+"&tok=24.86e78f820deb76da4b8bb166ad7df935.2592000.1532573868.282335-11445197&cuid=132546454564456&ctp=1&lan=zh";
+        $('#audio_mp3').attr("src",mp3_url);
+    }
+    //输入框的enter事件,
+    $('.home-main-fukuanma').bind('keydown',function(event){
+        if(event.keyCode == "13") {
+            var price = parseFloat($('.home-main-price2').val(),2);
+            if(price>0){
+                var auth_code = $('.home-main-fukuanma').val();
+                var data = {"username":userinfo.username,"user_token":userinfo.user_token,"price":price,"auth_code":auth_code};
+                $.post('http://st.stkj618.com/rest/pay/pay_order',data,function(res){
+                    if(res.msg == 'ok'){
+                        showmp3("支付成功账户到账"+data.price+"元");
+                        $("input").val("");
+                        preview();//执行打印,打开钱箱
+                    }else{
+                        alert(res.msg);
+                    }
+                },'json');
+            }else{
+                alert('请输入金额大小');
+            }
+
+        }
+    });
+//    ---------------------------  打印测试
+    var LODOP; //声明为全局变量
+    function preview(){
+        var data = {
+            "title":"优因生物",
+            "name":"打印机",
+            "phone":"18144055150",
+            "orderTime":"017-06-14",
+            "orderNo":"001401",
+            "shop":"门店测试",
+            "goodsList":[],
+            "totalCount":0.01,
+            "total":0.01
+        };
+        printOrder(data);
+    }
+    /**
+     * 样例函数,服务器确认订单后执行
+     */
+    function printOrder(data) {
+        //创建小票打印页
+        CreatePrintPage(data);
+//        LODOP.PRINT();//开始打印
+        LODOP.PREVIEW();//预览
+    };
+    function CreatePrintPage(data) {
+        //json 创建模拟服务器响应的订单信息对象
+        var json = data;
+        var hPos=10,//小票上边距
+                pageWidth=580,//小票宽度
+                rowHeight=15,//小票行距
+        //获取控件对象
+                LODOP=getLodop(document.getElementById('LODOP_OB'),document.getElementById('LODOP_EM'));
+        //初始化
+        LODOP.PRINT_INIT("打印控件功能演示_Lodop功能_名片");
+        //添加小票标题文本
+        LODOP.ADD_PRINT_TEXT(hPos,30,pageWidth,rowHeight,json.title);
+        //上边距往下移
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"姓名:");
+        LODOP.ADD_PRINT_TEXT(hPos,30,pageWidth,rowHeight,json.name);
+        //hPos+=rowHeight; //电话不换行
+        LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,"电话:");
+        LODOP.ADD_PRINT_TEXT(hPos,100,pageWidth,rowHeight,json.phone);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"下单时间:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.orderTime);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"订单编号:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.orderNo);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"取货门店:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.shop);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_LINE(hPos,2, hPos, pageWidth,2, 1);
+        hPos+=5;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"商品名称");
+        LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,"单价");
+        LODOP.ADD_PRINT_TEXT(hPos,110,pageWidth,rowHeight,"数量");
+        LODOP.ADD_PRINT_TEXT(hPos,140,pageWidth,rowHeight,"小计");
+        hPos+=rowHeight;
+        //遍历json的商品数组
+        for(var i=0;i<json.goodsList.length;i++){
+            if(json.goodsList[i].name.length<4){
+                LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,json.goodsList[i].name);
+            }else {
+                //商品名字过长,其他字段需要换行
+                LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,json.goodsList[i].name);
+                hPos+=rowHeight;
+            }
+            LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,json.goodsList[i].price);
+            LODOP.ADD_PRINT_TEXT(hPos,115,pageWidth,rowHeight,json.goodsList[i].count);
+            LODOP.ADD_PRINT_TEXT(hPos,140,pageWidth,rowHeight,json.goodsList[i].total);
+            hPos+=rowHeight;
+        }
+        //商品遍历打印完毕,空一行
+        hPos+=rowHeight;
+        //合计
+        LODOP.ADD_PRINT_TEXT(hPos,80,pageWidth,rowHeight,"合计:"+json.totalCount);
+        LODOP.ADD_PRINT_TEXT(hPos,130,pageWidth,rowHeight,"￥"+json.total);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,2,pageWidth,rowHeight,(new Date()).toLocaleDateString()+" "+(new Date()).toLocaleTimeString())
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,25,pageWidth,rowHeight,"谢谢惠顾,欢迎下次光临!");
+        //初始化打印页的规格
+        LODOP.SET_PRINT_PAGESIZE(3,pageWidth,45,"XXXXX订单信息");
+    }
+</script>
+</body>
+</html>

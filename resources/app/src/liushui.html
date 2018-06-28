@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link  rel="stylesheet" type="text/css"  href="../css/style.css"/>
+    <script src="../js/vue.js"></script>
+</head>
+<body>
+    <div class="liushui-content" id="liushui" v-cloak>
+        <div class="liushui-head">
+            <div class="liushui-head-item"><input class="liushui-text" v-model="jsons.serial_num" type="text" placeholder="流水号"></div>
+            <div class="liushui-head-item"><input class="liushui-text" v-model="jsons.out_serial_num" type="text" placeholder="外部流水号"></div>
+            <div class="liushui-head-item2"><label>通道：</label>
+                <select name="tongdao" v-model="jsons.channel_name">
+                    <option value="">全部</option>
+                    <option value="2">微信</option>
+                    <option value="1">支付宝</option>
+                </select>
+            </div>
+            <div class="liushui-head-item2"><label>状态：</label>
+                <select name="tongdao" v-model="jsons.status">
+                    <option value="">全部</option>
+                    <option value="0">未支付</option>
+                    <option value="1">已支付</option>
+                    <option value="2">已退款</option>
+                </select>
+            </div>
+            <div class="liushui-head-item2"><label>时间：</label><input type="date" v-model="jsons.trade_time"></div>
+            <div class="liushui-head-btn" @click="getorderlist">查询</div>
+        </div>
+        <div class="liushui-table">
+            <table>
+                <thead>
+                    <tr>
+                        <td width="200">流水号</td>
+                        <td width="80">金额（元）</td>
+                        <td width="60">通道</td>
+                        <td width="60">状态</td>
+                        <td width="140">下单时间</td>
+                        <td width="145">操作</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item,key) in list">
+                        <td v-html="item.serial_num"></td>
+                        <td v-html="item.price"></td>
+                        <td v-if="item.channel_name == 'wechat'">微信</td>
+                        <td v-else>支付宝</td>
+                        <td v-if="item.status == 1">已支付</td>
+                        <td v-else-if="item.status == 0">未支付</td>
+                        <td v-else>已退款</td>
+                        <td v-html="item.trade_time"></td>
+                        <td>
+                            <label @click="detail(item)">[详情]</label>
+                            <label v-show="item.status != 2" @click="refund(item,key)">[退款]</label>
+                            <label v-show="item.status != 2" @click="dayin(item)">[打印]</label>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="liushuicout">时间:2018-06-28&nbsp;&nbsp;统计金额:123 元</div>
+            <div class="pagelist">
+                <div @click="topage(1)" class="pageitem">首页</div>
+                <div @click="topage(jsons.page-2)" class="pageitem2" v-if="jsons.page-2 > 0">{{jsons.page-2}}</div>
+                <div @click="topage(jsons.page-1)" class="pageitem2" v-if="jsons.page-1 > 0">{{jsons.page-1}}</div>
+                <div @click="topage(jsons.page)" class="pageitem2 pageitemactive">{{jsons.page}}</div>
+                <div @click="topage(jsons.page+1)" class="pageitem2"  v-if="jsons.page+1 < count">{{jsons.page+1}}</div>
+                <div @click="topage(jsons.page+2)" class="pageitem2"  v-if="jsons.page+2 < count">{{jsons.page+2}}</div>
+                <div @click="topage(count)" class="pageitem">尾页</div>
+            </div>
+        </div>
+        <!--弹出框-->
+        <div class="liuhsui-alirt">
+            <div class="liuhsui-alirt-head">订单详情</div>
+            <ul>
+                <li><label>流水号:</label><label v-html="details.serial_num"></label></li>
+                <li><label>渠道流水号:</label><label v-html="details.channel_sno"></label></li>
+                <li><label>外部流水号:</label><label v-html="details.out_serial_num"></label></li>
+                <li  v-if="details.channel_name == 'wechat'"><label>通道名称:</label><label>微信支付</label></li>
+                <li v-else><label>通道名称:</label><label >支付宝</label></li>
+                <li><label>订单金额:</label><label v-html="details.price"></label></li>
+                <li v-if="details.status == 1"><label>订单状态:</label><label>已支付</label></li>
+                <li v-else-if="details.status == 2"><label>订单状态:</label><label >已退款</label></li>
+                <li v-else-if="details.status == 0"><label>订单状态:</label><label>未支付</label></li>
+                <li v-if="details.status == 2"><label>退款金额:</label><label v-html="details.price"></label></li>
+                <li v-else><label>退款金额:</label><label >0</label></li>
+            </ul>
+            <div class="liuhsui-alirt-btn" @click="queding()">确&nbsp;&nbsp;定</div>
+        </div>
+    </div>
+<script language="javascript" src="../js/LodopFuncs.js"></script>
+<script src="../js/jquery-1.9.1.js"></script>
+<script>
+    var userinfo = {};
+    var v1 = new Vue({
+        el: '#liushui',
+        data: {
+            jsons:{"username":"","user_token":"","page":1,"page_size":10,"trade_time":"","out_serial_num":"","merchant_id":"","channel_name":"","status":"","serial_num":"","channel_sno":""},
+            list:[],
+            count:0,
+            details:{"erials_num":"","channel_sno":"","out_serial_num":"","channel_name":"wechat","price":0,"status":0}
+        },
+        methods: {
+            getorderlist:function(){
+                var obj = this;
+                var count = 0;
+                obj.pagecount = [];
+//                obj.list = [];
+                $.post('http://st.stkj618.com/rest/user/payment_order_list',obj.jsons,function(res){
+                    for(var i=0;i<res.result.length;i++){
+                        res.result[i].price = res.result[i].price/100+"元";
+                    }
+                    obj.list = res.result;
+                    obj.count = Math.ceil(res.rs_count/obj.jsons.page_size);
+                },'json');
+            },
+            topage:function(pages){
+                this.jsons.page = pages;
+                this.getorderlist();
+            },
+            detail:function(item){
+                this.details.serial_num = item.serial_num;
+                this.details.channel_sno = item.channel_sno;
+                this.details.out_serial_num = item.out_serial_num;
+                this.details.channel_name = item.channel_name;
+                this.details.status = item.status;
+                this.details.price = item.price;
+                $('.liuhsui-alirt').show();
+            },
+            queding:function(){
+                $('.liuhsui-alirt').hide();
+            },
+            refund:function(item,key){
+                if(confirm('确认退款')){
+                    var obj = this;
+                    var userpwd = JSON.parse(localStorage.getItem('userpwd'));
+                    userpwd.user_token = userinfo.user_token;
+                    userpwd.payment_order_id = item.id;
+                    $.post('http://st.stkj618.com/rest/pay/refund_money',userpwd,function(res){
+                        if(res.code == 0){
+                            obj.list[key].status = 2
+                        }
+                    },'json');
+                }
+            },
+            dayin:function(item){
+                preview(item);
+            },
+            //统计流水
+            day_pay_count:function(){
+                var day = showtime();
+                var userinfo = JSON.parse(localStorage.getItem('userinfo'));
+                var data = {"username":userinfo.username,"user_token":userinfo.user_token,"start_time":day};
+                $.post('http://st.stkj618.com/rest/newcount/merchant_daily_list',data,function(res){
+                    console.info(res)
+                },'json');
+            }
+        },
+        created:function(){
+            userinfo = JSON.parse(localStorage.getItem('userinfo'));
+            this.jsons.username = userinfo.username;
+            this.jsons.user_token = userinfo.user_token;
+            this.getorderlist();
+            this.day_pay_count();
+        }
+    })
+    function showtime(){
+        var mydate = new Date();
+        var str = "" + mydate.getFullYear() + "-";
+        str += (mydate.getMonth()+1) + "-";
+        str += mydate.getDate() + "";
+        return str;
+    }
+//    ---------------------------  打印测试
+    var LODOP; //声明为全局变量
+    function preview(){
+        var data = {
+            "title":"优因生物",
+            "name":"打印机",
+            "phone":"18144055150",
+            "orderTime":"017-06-14",
+            "orderNo":"001401",
+            "shop":"门店测试",
+            "goodsList":[],
+            "totalCount":0.01,
+            "total":0.01
+        };
+        printOrder(data);
+    }
+    /**
+     * 样例函数,服务器确认订单后执行
+     */
+    function printOrder(data) {
+        //创建小票打印页
+        CreatePrintPage(data);
+//        LODOP.PRINT();//开始打印
+        LODOP.PREVIEW();//预览
+    };
+    function CreatePrintPage(data) {
+        //json 创建模拟服务器响应的订单信息对象
+        var json = data;
+        var hPos=10,//小票上边距
+                pageWidth=580,//小票宽度
+                rowHeight=15,//小票行距
+        //获取控件对象
+                LODOP=getLodop(document.getElementById('LODOP_OB'),document.getElementById('LODOP_EM'));
+        //初始化
+        LODOP.PRINT_INIT("打印控件功能演示_Lodop功能_名片");
+        //添加小票标题文本
+        LODOP.ADD_PRINT_TEXT(hPos,30,pageWidth,rowHeight,json.title);
+        //上边距往下移
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"姓名:");
+        LODOP.ADD_PRINT_TEXT(hPos,30,pageWidth,rowHeight,json.name);
+        //hPos+=rowHeight; //电话不换行
+        LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,"电话:");
+        LODOP.ADD_PRINT_TEXT(hPos,100,pageWidth,rowHeight,json.phone);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"下单时间:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.orderTime);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"订单编号:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.orderNo);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"取货门店:");
+        LODOP.ADD_PRINT_TEXT(hPos,60,pageWidth,rowHeight,json.shop);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_LINE(hPos,2, hPos, pageWidth,2, 1);
+        hPos+=5;
+        LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,"商品名称");
+        LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,"单价");
+        LODOP.ADD_PRINT_TEXT(hPos,110,pageWidth,rowHeight,"数量");
+        LODOP.ADD_PRINT_TEXT(hPos,140,pageWidth,rowHeight,"小计");
+        hPos+=rowHeight;
+        //遍历json的商品数组
+        for(var i=0;i<json.goodsList.length;i++){
+            if(json.goodsList[i].name.length<4){
+                LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,json.goodsList[i].name);
+            }else {
+                //商品名字过长,其他字段需要换行
+                LODOP.ADD_PRINT_TEXT(hPos,1,pageWidth,rowHeight,json.goodsList[i].name);
+                hPos+=rowHeight;
+            }
+            LODOP.ADD_PRINT_TEXT(hPos,70,pageWidth,rowHeight,json.goodsList[i].price);
+            LODOP.ADD_PRINT_TEXT(hPos,115,pageWidth,rowHeight,json.goodsList[i].count);
+            LODOP.ADD_PRINT_TEXT(hPos,140,pageWidth,rowHeight,json.goodsList[i].total);
+            hPos+=rowHeight;
+        }
+        //商品遍历打印完毕,空一行
+        hPos+=rowHeight;
+        //合计
+        LODOP.ADD_PRINT_TEXT(hPos,80,pageWidth,rowHeight,"合计:"+json.totalCount);
+        LODOP.ADD_PRINT_TEXT(hPos,130,pageWidth,rowHeight,"￥"+json.total);
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,2,pageWidth,rowHeight,(new Date()).toLocaleDateString()+" "+(new Date()).toLocaleTimeString())
+        hPos+=rowHeight;
+        LODOP.ADD_PRINT_TEXT(hPos,25,pageWidth,rowHeight,"谢谢惠顾,欢迎下次光临!");
+        //初始化打印页的规格
+        LODOP.SET_PRINT_PAGESIZE(3,pageWidth,45,"XXXXX订单信息");
+    }
+    </script>
+</body>
+</html>

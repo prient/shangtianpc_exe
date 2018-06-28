@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link  rel="stylesheet" type="text/css"  href="../css/style.css"/>
+</head>
+<body>
+    <div class="home-content">
+        <div class="home-head">
+            <div class="home-head-top">
+                <div class="tuodongquyu"></div>
+                <div class="public-icon nav-close" id="close-btn" onclick="homeclose()">×</div>
+                <div class="public-icon nav-hidden" id="hidden-btn" onclick="homehide()">-</div>
+            </div>
+            <div class="home-head-content">
+                <div class="home-head-content-left"></div>
+                <div class="home-head-content-right">
+                    <div id="number"></div>
+                    <div id="reset" onclick="logout()" class="home-reset">注销</div>
+                </div>
+            </div>
+        </div>
+        <div class="public-nav">
+            <ul>
+                <li class="public-nav-li active" onclick="selnav('shoukuang.html',0)">收款</li>
+                <li class="public-nav-li" onclick="selnav('liushui.html',1)">流水</li>
+                <li class="public-nav-li" >设置</li>
+                <li class="public-nav-li" onclick="selnav('kuaijie.html',3)">快捷键</li>
+            </ul>
+        </div>
+        <!--iframe-->
+        <iframe id="iframe" class="iframestyle" src="shoukuang.html"></iframe>
+    </div>
+<script src="../js/jquery-1.9.1.js"></script>
+<script>
+    const {app,ipcRenderer,globalShortcut} = require('electron');
+    var data = getlocalkey();
+    ipcRenderer.send('loadShortcut',data);
+    ipcRenderer.on('main-kuajie',function(e,data){
+        $('.public-nav-li').eq(data).click();
+    });
+    //登录获取信息
+    var userinfo = JSON.parse(localStorage.getItem('userinfo'));
+    $('.home-head-content-left').html(userinfo.name);
+    $('#number').html(userinfo.username);
+    //选择菜单
+    function selnav(url,index){
+        $("#iframe").attr("src",url);
+        $(".public-nav-li").removeClass("active");
+        $(".public-nav-li").eq(index).addClass("active");
+    };
+    //注销事件
+    function logout(){
+        $.post('http://st.stkj618.com/rest/user/logout',{"username":userinfo.username},function(res){
+            if(res.msg == 'ok'){
+                localStorage.setItem('userinfo',null);
+                ipcRenderer.send('reload');//注销事件
+            }
+        },'json');
+    }
+    //隐藏事件
+    function homehide(){
+        ipcRenderer.send('homehide');
+    }
+    //关闭事件
+    function homeclose(){
+        ipcRenderer.send('homeclose');
+    }
+    //获取用户设置快捷键
+    function getlocalkey(){
+        return [
+            (localStorage.getItem('number1') == null)?'F1':localStorage.getItem('number1'),
+            (localStorage.getItem('number2') == null)?'F3':localStorage.getItem('number2'),
+            (localStorage.getItem('number3') == null)?'F4':localStorage.getItem('number3'),
+            (localStorage.getItem('number4') == null)?'F6':localStorage.getItem('number4')
+        ];
+    }
+</script>
+</body>
+</html>

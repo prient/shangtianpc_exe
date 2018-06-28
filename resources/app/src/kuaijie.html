@@ -1,0 +1,41 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link  rel="stylesheet" type="text/css"  href="../css/style.css"/>
+</head>
+<body>
+    <div class="kuaijie-list">
+        <div class="kuaijie-item">
+            <label>反扫功能: <input type="text"></label>
+        </div>
+        <div class="kuaijie-item">
+            <label>交易流水: <input type="text"></label>
+        </div>
+        <div class="kuaijie-item">
+            <label>设置功能: <input type="text"></label>
+        </div>
+        <div class="kuaijie-item">
+            <label>快捷功能: <input type="text"></label>
+        </div>
+    </div>
+    <div class="kuaijie-submit" onclick="save()">保存</div>
+<script src="../js/jquery-1.9.1.js"></script>
+<script>
+    var obj = $('.kuaijie-list');
+    $(function(){
+        obj.find('input').eq(0).val((localStorage.getItem('number1') == null)?'F1':localStorage.getItem('number1'));
+        obj.find('input').eq(1).val((localStorage.getItem('number2') == null)?'F3':localStorage.getItem('number2'));
+        obj.find('input').eq(2).val((localStorage.getItem('number3') == null)?'F4':localStorage.getItem('number3'));
+        obj.find('input').eq(3).val((localStorage.getItem('number4') == null)?'F6':localStorage.getItem('number4'));
+    });
+    function save(){
+        localStorage.setItem('number1',(obj.find('input').eq(0).val()=='')?"F1":obj.find('input').eq(0).val());
+        localStorage.setItem('number2',(obj.find('input').eq(1).val()=='')?"F3":obj.find('input').eq(1).val());
+        localStorage.setItem('number3',(obj.find('input').eq(2).val()=='')?"F4":obj.find('input').eq(2).val());
+        localStorage.setItem('number4',(obj.find('input').eq(3).val()=='')?"F6":obj.find('input').eq(3).val());
+        alert('保存成功');
+    }
+</script>
+</body>
+</html>
