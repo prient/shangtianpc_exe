@@ -2,14 +2,17 @@
 const {app, BrowserWindow,ipcMain,Menu,Tray,globalShortcut} = require('electron');
 const path = require('path');
 //热更新
-require('update-electron-app')({});
+require('update-electron-app')({
+  repo:"https://github.com/prient/shangtianpc_exe",
+  updateInterval: '1 minutes'
+});
 //
 let mainWindow,homeWindow;//注册路由
 let tray = null;//注册托盘菜单
 var isShow = 1;
 function createWindow () {
   mainWindow = new BrowserWindow({width: 430, height: 340,frame: false});
-  //mainWindow.webContents.openDevTools();//debug调试
+  mainWindow.webContents.openDevTools();//debug调试
   mainWindow.loadFile('src/index.html');
   //界面退出触发
   mainWindow.on('closed', function () {
@@ -86,7 +89,7 @@ ipcMain.on('window-min',function(){
 ipcMain.on('locahref',function(){
   //创建新窗口
   homeWindow = new BrowserWindow({width: 640, height: 580,frame: false});
-  //homeWindow.webContents.openDevTools();//debug调试
+  homeWindow.webContents.openDevTools();//debug调试
   homeWindow.loadFile('src/home.html');
   createtray();
   //关闭旧窗口
@@ -96,7 +99,7 @@ ipcMain.on('locahref',function(){
 //注销
 ipcMain.on('reload',function(){
   mainWindow = new BrowserWindow({width: 430, height: 340,frame: false});
-  //mainWindow.webContents.openDevTools();//debug调试
+  mainWindow.webContents.openDevTools();//debug调试
   mainWindow.loadFile('src/index.html');
   //mainWindow.show();
   tray.destroy();
