@@ -2,7 +2,7 @@
 const {app, BrowserWindow,ipcMain,Menu,Tray,globalShortcut} = require('electron');
 const path = require('path');
 //热更新
-//require('update-electron-app')({});
+require('update-electron-app')({});
 //
 let mainWindow,homeWindow;//注册路由
 let tray = null;//注册托盘菜单
