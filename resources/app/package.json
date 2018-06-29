@@ -1,6 +1,6 @@
 {
   "name": "shantian_pc",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
@@ -23,7 +23,7 @@
   },
   "manifest": [
     {
-      "version": "1.0.2",
+      "version": "1.0.3",
       "detail": "初始版本"
     }
   ],
