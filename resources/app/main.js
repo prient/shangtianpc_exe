@@ -4,7 +4,7 @@ const path = require('path');
 //热更新
 require('update-electron-app')({
   repo:"https://github.com/prient/shangtianpc_exe",
-  updateInterval: '1 minutes'
+  updateInterval: '5 minutes'
 });
 //
 let mainWindow,homeWindow;//注册路由
