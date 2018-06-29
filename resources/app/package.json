@@ -1,11 +1,11 @@
 {
   "name": "shantian_pc",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . shangtianpc_exe --win --out ../shangtianpc_exe --arch=x64 --electron-version=2.0.0"
+    "package": "electron-packager . demo --win --out ../demo --arch=x64 --electron-version=2.0.0"
   },
   "repository": "https://github.com/prient/shangtianpc_exe",
   "keywords": [
@@ -23,7 +23,7 @@
   },
   "manifest": [
     {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "detail": "初始版本"
     }
   ],
